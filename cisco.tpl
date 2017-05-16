@@ -7,14 +7,16 @@ route-map peering-{{$x.Name | FriendlyIXName}}-direct-in permit 10
 
 router bgp {{.Local.ASN}}
 !
+address-family ipv4
   neighbor {{.Remote.Name | FriendlyNetName}}v4 peer-group
   neighbor {{.Remote.Name | FriendlyNetName}}v4 remote-as {{.Remote.ASN}}
   neighbor {{.Remote.Name | FriendlyNetName}}v4 prefix-list bogons-filter-in in
   neighbor {{.Remote.Name | FriendlyNetName}}v4 filter-list 2 out
   neighbor {{.Remote.Name | FriendlyNetName}}v4 remove-private-as
-  neighbor {{.Remote.Name | FriendlyNetName}}v4 maximum-prefix {{if gt .Remote.Prefixes4 0}}{{.Remote.Prefixes4}}{{else}}{{.DefaultMaxPrefix}} {{end}}
+  neighbor {{.Remote.Name | FriendlyNetName}}v4 soft-reconfiguration inbound
+  neighbor {{.Remote.Name | FriendlyNetName}}v4 maximum-prefix {{if gt .Remote.Prefixes4 0}}{{.Remote.Prefixes4}}{{else}}{{.DefaultMaxPrefix}}{{end}} 60
+  {{if ne .MD5 ""}}neighbor {{$.Remote.Name | FriendlyNetName}}v4 password {{.MD5}}{{end}}
   !
-  address-family ipv4
   {{range $i, $x := $.Peers.Peers}}
     neighbor {{.IPAddr4}} peer-group {{$.Remote.Name | FriendlyNetName}}v4
     neighbor {{.IPAddr4}} description Peering: {{$.Remote.Name | FriendlyNetName}} {{$x.Name | FriendlyIXName}}
@@ -23,14 +25,16 @@ router bgp {{.Local.ASN}}
   {{end}}
   exit
 !
-  neighbor {{.Remote.Name | FriendlyNetName}}v6 peer-group
-  neighbor {{.Remote.Name | FriendlyNetName}}v6 remote-as {{.Remote.ASN}}
-  neighbor {{.Remote.Name | FriendlyNetName}}v6 prefix-list bogons-filter-in in
-  neighbor {{.Remote.Name | FriendlyNetName}}v6 filter-list 2 out
-  neighbor {{.Remote.Name | FriendlyNetName}}v6 remove-private-as
-  neighbor {{.Remote.Name | FriendlyNetName}}v6 maximum-prefix {{if gt .Remote.Prefixes6 0}}{{.Remote.Prefixes6}}{{else}}{{.DefaultMaxPrefix}}{{end}}
-  !
   address-family ipv6
+  neighbor {{$.Remote.Name | FriendlyNetName}}v6 peer-group
+  neighbor {{$.Remote.Name | FriendlyNetName}}v6 remote-as {{.Remote.ASN}}
+  neighbor {{$.Remote.Name | FriendlyNetName}}v6 prefix-list bogons-filter-in in
+  neighbor {{$.Remote.Name | FriendlyNetName}}v6 filter-list 2 out
+  neighbor {{$.Remote.Name | FriendlyNetName}}v6 remove-private-as
+  neighbor {{.Remote.Name | FriendlyNetName}}v6 soft-reconfiguration inbound
+  neighbor {{$.Remote.Name | FriendlyNetName}}v6 maximum-prefix {{if gt .Remote.Prefixes6 0}}{{.Remote.Prefixes6}}{{else}}{{.DefaultMaxPrefix}}{{end}} 60
+  {{if ne .MD5 ""}}neighbor {{$.Remote.Name | FriendlyNetName}}v6 password {{.MD5}}{{end}}
+  !
    {{range $i, $x := $.Peers.Peers}}
     neighbor {{.IPAddr6}} peer-group {{$.Remote.Name | FriendlyNetName}}v6
     neighbor {{.IPAddr6}} description Peering: {{$.Remote.Name | FriendlyNetName}} {{$x.Name | FriendlyIXName}}
